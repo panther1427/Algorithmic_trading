@@ -1,1 +1,0 @@
-# Algoritmic_trading
