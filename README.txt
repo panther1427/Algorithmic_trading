@@ -12,3 +12,8 @@ Momentum framework, with risk model
 The momentum framework buys securities that has done good over a long period of time. The model selects the 100 most liquid stocks, and selects the 10 stocks that have 
 done the best. It is long only. The risk model is based on SPY, and an EMA. The logic is that all stocks have a high beta in bear markets. If the value of SPY falls below 
 the EMA, we liquidate everything, and only holds cash
+
+
+Kalman Filter framework
+
+NOT FINISHED 
