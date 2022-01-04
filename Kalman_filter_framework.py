@@ -11,7 +11,7 @@ class CointegrationAndKalmanFilter(QCAlgorithm):
     def Initialize(self):
         #setting our start, end etc
         self.SetStartDate(2016, 4, 28)  # Set Start Date
-        self.SetEndDate(2021, 5, 30)  # Set End Date
+        self.SetEndDate(2021, 12, 1)  # Set End Date
         self.SetCash(100000)  # Set Strategy Cash
         self.UniverseSettings.Resolution = Resolution.Daily
         self.SetBenchmark('SPY')
@@ -25,7 +25,7 @@ class CointegrationAndKalmanFilter(QCAlgorithm):
         self.AddAlpha(PairsTradingAlpha())
         
         #has to be a even number, or it wont be market neutral, or work at all
-        self.num_coarse = 40
+        self.num_coarse = 30
     
         #Used for rebalancing
         self.lastMonth = -1
@@ -69,9 +69,16 @@ class CointegrationAndKalmanFilter(QCAlgorithm):
         for pair in pairs:
             stocks.append(pair[0])
             stocks.append(pair[1])
+            
  
         #makes a list and returns it, if the stock is in the filtered_fine list
-        final_stocks = [x for x in filtered_fine if str(x) in stocks]
+        final_stocks = []
+        
+        for i in stocks:
+            for ii in filtered_fine:
+                if i == ii:
+                    final_stocks.append(ii)
+        
         return final_stocks
 
 
@@ -83,7 +90,7 @@ class CointegrationAndKalmanFilter(QCAlgorithm):
         return dataframe
         
         
-    def find_cointegrated_pairs(self, dataframe, critical_level = 0.05):
+    def find_cointegrated_pairs(self, dataframe, critical_level = 0.02):
         #method to calculate how cointegrated the stocks are
         n = dataframe.shape[1]
         pvalue_matrix = np.ones((n, n))
@@ -106,7 +113,7 @@ class CointegrationAndKalmanFilter(QCAlgorithm):
 
 
 class PairsTradingAlpha(AlphaModel):
-    def __init__(self, resolution = Resolution.Daily, lookback = timedelta(weeks = 10), predictionInterval = timedelta(weeks=1)):
+    def __init__(self, resolution = Resolution.Daily, lookback = timedelta(weeks = 5), predictionInterval = timedelta(weeks=1)):
         #setting our resolution lookback etc
         self.resolution = resolution
         self.lookback = lookback
@@ -115,7 +122,7 @@ class PairsTradingAlpha(AlphaModel):
         #Keeps track of the pairs
         self.pairs = dict()
         #keeps track of all the stock, not listed by pairs
-        self.Securities = list()
+        self.Security = list()
         
     def Update(self, algorithm, data):
         
@@ -216,16 +223,17 @@ class PairsTradingAlpha(AlphaModel):
     def OnSecuritiesChanged(self, algorithm, changes):
         #adding securities to self.securities
         for security in changes.AddedSecurities:
-            self.Securities.append(security)
+            self.Security.append(security)
             
         
         #logic for removing securities from self.securities
         for security in changes.RemovedSecurities:
-            if security in self.Securities:
-                self.Securities.remove(security)
+            if security in self.Security:
+                self.Security.remove(security)
 
         #Logic to remove securities from the self.pair
         for security in changes.RemovedSecurities:
+            
             del_keys = []
             
             #For removing securities in the self.pairs
@@ -242,26 +250,25 @@ class PairsTradingAlpha(AlphaModel):
         
     def UpdatePairs(self, algorithm):
         #use the list of the active tickers in our univers
-        symbols = [x.Symbol for x in self.Securities]
+        symbols = [x.Symbol for x in self.Security]
         
         #
         #
         #This is maybe wrong logic, have to double check!!!!!
-        for i in range(0, len(symbols)):
+        for i in range(0, len(symbols), 2):
             asset_i = symbols[i]
             
-            for ii in range(1+i, len(symbols)):
-                asset_ii = symbols[ii]
-                pair_symbol = (asset_i, asset_ii)
+            asset_ii = symbols[i+1]
+            pair_symbol = (asset_i, asset_ii)
                 
-                if len(pair_symbol) != 2:
-                    continue
+            if len(pair_symbol) != 2:
+                continue
                 
                 #hvis at vores pairs allerede er i eksisterende aktier, så går vi ud af funktionen
-                if pair_symbol in self.pairs.values():
-                    continue
+            if pair_symbol in self.pairs.values():
+                continue
                 
-                self.pairs[i] = symbolData(pair_symbol)
+            self.pairs[i] = symbolData(pair_symbol)
         #
         #
         #
