@@ -10,10 +10,7 @@ from pytz import utc
 UTCMIN = datetime.min.replace(tzinfo=utc)
 #endregion
 class EqualWeightedPairsTradingPortfolio(PortfolioConstructionModel):
-
-
     def __init__(self):
-        
         
         self.insightCollection = InsightCollection()
         self.removedSymbols = []
